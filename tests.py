@@ -1,27 +1,41 @@
-from functions.write_file import write_file
+from functions.run_python import run_python_file
 
-def test_write_file():
-    """Test the write_file function with various scenarios"""
+def test_run_python_file():
+    """Test the run_python_file function with various scenarios"""
     
-    # Test 1: Write to lorem.txt file (should overwrite existing content)
-    print("write_file(\"calculator\", \"lorem.txt\", \"wait, this isn't lorem ipsum\"):")
-    result1 = write_file("calculator", "lorem.txt", "wait, this isn't lorem ipsum")
+    # Test 1: Run main.py without arguments (should print usage instructions)
+    print("run_python_file(\"calculator\", \"main.py\"):")
+    result1 = run_python_file("calculator", "main.py")
     print("Result:")
-    print(f"    {result1}")
+    print(result1)
     print()
     
-    # Test 2: Write to a new file in pkg directory
-    print("write_file(\"calculator\", \"pkg/morelorem.txt\", \"lorem ipsum dolor sit amet\"):")
-    result2 = write_file("calculator", "pkg/morelorem.txt", "lorem ipsum dolor sit amet")
+    # Test 2: Run main.py with calculation argument
+    print("run_python_file(\"calculator\", \"main.py\", [\"3 + 5\"]):")
+    result2 = run_python_file("calculator", "main.py", ["3 + 5"])
     print("Result:")
-    print(f"    {result2}")
+    print(result2)
     print()
     
-    # Test 3: Try to write outside the working directory (should be blocked)
-    print("write_file(\"calculator\", \"/tmp/temp.txt\", \"this should not be allowed\"):")
-    result3 = write_file("calculator", "/tmp/temp.txt", "this should not be allowed")
+    # Test 3: Run tests.py
+    print("run_python_file(\"calculator\", \"tests.py\"):")
+    result3 = run_python_file("calculator", "tests.py")
     print("Result:")
-    print(f"    {result3}")
+    print(result3)
+    print()
+    
+    # Test 4: Try to run file outside working directory (should be blocked)
+    print("run_python_file(\"calculator\", \"../main.py\"):")
+    result4 = run_python_file("calculator", "../main.py")
+    print("Result:")
+    print(f"    {result4}")
+    print()
+    
+    # Test 5: Try to run non-existent file (should return error)
+    print("run_python_file(\"calculator\", \"nonexistent.py\"):")
+    result5 = run_python_file("calculator", "nonexistent.py")
+    print("Result:")
+    print(f"    {result5}")
 
 if __name__ == "__main__":
-    test_write_file()
+    test_run_python_file()
