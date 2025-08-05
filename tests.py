@@ -1,34 +1,27 @@
-from functions.get_files_info import get_files_info
+from functions.write_file import write_file
 
-def test_get_files_info():
-    """Test the get_files_info function with various scenarios"""
+def test_write_file():
+    """Test the write_file function with various scenarios"""
     
-    # Test 1: List current directory in calculator
-    print("get_files_info(\"calculator\", \".\"):")
-    result1 = get_files_info("calculator", ".")
-    print("Result for current directory:")
-    print(result1)
+    # Test 1: Write to lorem.txt file (should overwrite existing content)
+    print("write_file(\"calculator\", \"lorem.txt\", \"wait, this isn't lorem ipsum\"):")
+    result1 = write_file("calculator", "lorem.txt", "wait, this isn't lorem ipsum")
+    print("Result:")
+    print(f"    {result1}")
     print()
     
-    # Test 2: List pkg subdirectory
-    print("get_files_info(\"calculator\", \"pkg\"):")
-    result2 = get_files_info("calculator", "pkg")
-    print("Result for 'pkg' directory:")
-    print(result2)
+    # Test 2: Write to a new file in pkg directory
+    print("write_file(\"calculator\", \"pkg/morelorem.txt\", \"lorem ipsum dolor sit amet\"):")
+    result2 = write_file("calculator", "pkg/morelorem.txt", "lorem ipsum dolor sit amet")
+    print("Result:")
+    print(f"    {result2}")
     print()
     
-    # Test 3: Try to access /bin (should be blocked)
-    print("get_files_info(\"calculator\", \"/bin\"):")
-    result3 = get_files_info("calculator", "/bin")
-    print("Result for '/bin' directory:")
+    # Test 3: Try to write outside the working directory (should be blocked)
+    print("write_file(\"calculator\", \"/tmp/temp.txt\", \"this should not be allowed\"):")
+    result3 = write_file("calculator", "/tmp/temp.txt", "this should not be allowed")
+    print("Result:")
     print(f"    {result3}")
-    print()
-    
-    # Test 4: Try to access parent directory (should be blocked)
-    print("get_files_info(\"calculator\", \"../\"):")
-    result4 = get_files_info("calculator", "../")
-    print("Result for '../' directory:")
-    print(f"    {result4}")
 
 if __name__ == "__main__":
-    test_get_files_info()
+    test_write_file()
