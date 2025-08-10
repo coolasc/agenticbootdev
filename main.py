@@ -135,51 +135,106 @@ def main():
         print(f"User prompt: {prompt}")
 
     messages = [
-    types.Content(role="user", parts=[types.Part(text=prompt)]),]
+        types.Content(role="user", parts=[types.Part(text=prompt)]),
+    ]
     
     client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model='gemini-2.0-flash-001',
-        contents=messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions], 
-            system_instruction=system_prompt
-        ),
-    )
-    # Check if the response contains function calls
-    if response.candidates and response.candidates[0].content.parts:
-        for part in response.candidates[0].content.parts:
-            if hasattr(part, 'function_call') and part.function_call:
-                function_call_part = part.function_call
-                function_call_result = call_function(function_call_part, verbose)
-                
-                # Validate the response structure
-                if not (function_call_result.parts and 
-                        hasattr(function_call_result.parts[0], 'function_response') and
-                        function_call_result.parts[0].function_response and
-                        hasattr(function_call_result.parts[0].function_response, 'response')):
-                    raise Exception("Invalid function response structure")
-                
-                # Print result if verbose
-                if verbose:
-                    print(f"-> {function_call_result.parts[0].function_response.response}")
-                else:
-                    # Print just the result for non-verbose mode
-                    response_data = function_call_result.parts[0].function_response.response
-                    if "result" in response_data:
-                        print(response_data["result"])
-                    elif "error" in response_data:
-                        print(response_data["error"])
-                        
-            elif hasattr(part, 'text') and part.text:
-                print(part.text)
-    else:
-        # Fallback to original text response
-        print(response.text)
     
-    if verbose:
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+    # Conversational loop - limit to 20 iterations
+    max_iterations = 20
+    iteration = 0
+    
+    try:
+        while iteration < max_iterations:
+            iteration += 1
+            
+            if verbose:
+                print(f"\n--- Iteration {iteration} ---")
+            
+            # Generate content with current messages
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-001',
+                contents=messages,
+                config=types.GenerateContentConfig(
+                    tools=[available_functions], 
+                    system_instruction=system_prompt
+                ),
+            )
+            
+            # Check if we have candidates in the response
+            if not response.candidates or not response.candidates[0].content:
+                print("No response candidates found")
+                break
+            
+            candidate_content = response.candidates[0].content
+            
+            # Add the model's response to our conversation
+            messages.append(candidate_content)
+            
+            # Check if this is a final text response (no function calls)
+            has_function_calls = False
+            has_text_response = False
+            
+            # Process each part of the response
+            for part in candidate_content.parts:
+                if hasattr(part, 'function_call') and part.function_call:
+                    has_function_calls = True
+                    function_call_part = part.function_call
+                    
+                    # Call the function and get the result
+                    function_call_result = call_function(function_call_part, verbose)
+                    
+                    # Validate the response structure
+                    if not (function_call_result.parts and 
+                            hasattr(function_call_result.parts[0], 'function_response') and
+                            function_call_result.parts[0].function_response and
+                            hasattr(function_call_result.parts[0].function_response, 'response')):
+                        raise Exception("Invalid function response structure")
+                    
+                    # Add the tool response to our conversation
+                    messages.append(function_call_result)
+                    
+                    # Print result if verbose
+                    if verbose:
+                        print(f"-> {function_call_result.parts[0].function_response.response}")
+                    else:
+                        # Print just the result for non-verbose mode
+                        response_data = function_call_result.parts[0].function_response.response
+                        if "result" in response_data:
+                            print(response_data["result"])
+                        elif "error" in response_data:
+                            print(response_data["error"])
+                            
+                elif hasattr(part, 'text') and part.text:
+                    has_text_response = True
+                    if verbose:
+                        print(f"Model response: {part.text}")
+            
+            # If we got a text response and no function calls, we're done
+            if has_text_response and not has_function_calls:
+                # Print the final response
+                final_text = ""
+                for part in candidate_content.parts:
+                    if hasattr(part, 'text') and part.text:
+                        final_text += part.text
+                
+                if not verbose and final_text:
+                    print(final_text)
+                break
+            
+            # If no function calls and no text, something went wrong
+            if not has_function_calls and not has_text_response:
+                print("No function calls or text response found")
+                break
+                
+        if iteration >= max_iterations:
+            print(f"Reached maximum iterations ({max_iterations})")
+            
+    except Exception as e:
+        print(f"Error during conversation loop: {e}")
+        if verbose:
+            import traceback
+            traceback.print_exc()
 
 
 if __name__ == "__main__":
